@@ -1,0 +1,6 @@
+#!/bin/sh
+
+aseq 'ss -c1,1 < input' '\
+1	1
+3	3
+'
