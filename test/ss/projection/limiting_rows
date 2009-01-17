@@ -1,0 +1,8 @@
+#!/bin/bash
+
+echo $0
+
+cd ../../../
+
+diff <(./ss -r1 < test/input) <(echo "\
+1	2	3")

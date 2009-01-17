@@ -1,5 +1,0 @@
-#!/bin/sh
-
-aseq 'ss -r1 < input' '\
-1	2	3
-'

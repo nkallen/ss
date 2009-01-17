@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo $0
+
+cd ../../../
+
+diff <(./ss -c-1 < test/input) <(echo "\
+3
+6
+9")

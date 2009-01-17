@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo $0
+
+cd ../../../
+
+diff <(./ss -c1,1,1 < test/input) <(echo "\
+1	1	1
+4	4	4
+7	7	7")

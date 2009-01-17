@@ -1,7 +1,0 @@
-#!/bin/sh
-
-aseq 'ss -c\'avg(1)\' < input' '\
-1
-2.5
-4
-'

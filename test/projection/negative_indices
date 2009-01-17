@@ -1,7 +1,0 @@
-#!/bin/sh
-
-aseq 'ss -c-1 < input' '\
-3
-6
-9
-'

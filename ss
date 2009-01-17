@@ -5,7 +5,6 @@ use strict;
 use warnings;
 
 my %options = (
-	c => '',
 );
 
 getopts("c:r:", \%options);
@@ -21,15 +20,18 @@ while (<STDIN>) {
 
 	if ($hasRowProjections) {
 		last if (!@rowProjections);
-		next if ($rowProjections[0] != $row);
+		next if ($rowProjections[0][1] != $row);
 		
 		shift @rowProjections;
 	}
 	
 	if ($hasColumnProjections) {
 		my $projection;
-		foreach $projection (@columnProjections) {
-			push(@output, $columns[$projection - 1]);
+		for $projection (@columnProjections) {
+			my ($calculation, $column) = @$projection;
+			my $datum = $columns[$column % @columns + ($column < 0 ? 0 : -1)];
+			calc($calculation, $datum);
+			push(@output, $datum);
 		}
 	} else {
 		@output = @columns;
@@ -47,14 +49,20 @@ sub parseProjections {
 	my $projectionSpecification;
 
 	foreach $projectionSpecification (@projectionSpecifications) {
-		if ($projectionSpecification =~ /^\d+$/) {
-			push @projections, $projectionSpecification;
-		} elsif ($projectionSpecification =~ /^(\d+)\.\.(\d+)/) {
+		if ($projectionSpecification =~ /^(-?)\d+$/) {
+			push @projections, ['id', $projectionSpecification];
+		} elsif ($projectionSpecification =~ /^(-?\d+)\.\.(-?\d+)/) {
 			my $projection;
 			foreach $projection ($1 .. $2) {
-				push @projections, $projection;
+				push @projections, ['id', $projection];
 			}
 		}
 	}
 	return (1, @projections);
+}
+
+sub calc {
+	my $calculation = shift;
+	my $datum = shift;
+	return $datum;
 }
