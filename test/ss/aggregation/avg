@@ -1,7 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 
-aseq 'ss -c\'avg(1)\' < input' '\
+echo $0
+
+cd ../../../
+
+diff <(./ss -c'avg(1)' < test/input) <(echo "\
 1
 2.5
-4
-'
+4")
