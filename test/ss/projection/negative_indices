@@ -8,3 +8,8 @@ diff <(./ss -c-1 < test/input) <(echo "\
 3
 6
 9")
+
+diff <(./ss -c1..-2 < test/input) <(echo "\
+1	2
+4	5
+7	8")

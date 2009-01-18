@@ -7,7 +7,7 @@ use warnings;
 my %options = ();
 my %calculations = ();
 
-getopts("c:r:", \%options);
+getopts("c:r:s", \%options);
 
 my ($hasColumnProjections, @columnProjections) = parseProjections($options{c});	
 my ($hasRowProjections, @rowProjections) = parseProjections($options{r});	
@@ -21,22 +21,25 @@ while (<STDIN>) {
 	if ($hasRowProjections) {
 		last if (!@rowProjections);
 		next if ($rowProjections[0][1] != $row);
-		
 		shift @rowProjections;
 	}
 	
 	if ($hasColumnProjections) {
 		my $projection;
 		for $projection (@columnProjections) {
-			my ($calculation, $column) = @$projection;
-			my $normalizedColumn = $column % @columns + ($column < 0 ? 0 : -1);
-			my $datum = $columns[$normalizedColumn];
-			push(@output, calc($calculation, $normalizedColumn, $datum));
+			my ($calculation, $columns) = @$projection;
+			my $column;
+			for $column (@$columns) {
+				print $column, "\n";
+				my $normalizedColumn = $column % @columns + ($column < 0 ? 0 : -1);
+				my $datum = $columns[$normalizedColumn];
+				push(@output, calc($calculation, $normalizedColumn, $datum));
+			}
 		}
 	} else {
 		@output = @columns;
 	}
-	print(join("\t", @output), "\n");
+	# print(join("\t", @output), "\n");
 }
 
 sub parseProjections {
@@ -44,20 +47,16 @@ sub parseProjections {
 	return (0, ()) if !defined($specString);
 	
 	my @projections = ();
-	
 	my @projectionSpecifications = split(/,\s*/, $specString);
 	my $projectionSpecification;
 
 	foreach $projectionSpecification (@projectionSpecifications) {
-		if ($projectionSpecification =~ /^-?\d+$/) {
-			push @projections, ['id', $projectionSpecification];
-		} elsif ($projectionSpecification =~ /^(-?\d+)\.\.(-?\d+)/) {
-			my $projection;
-			foreach $projection ($1 .. $2) {
-				push @projections, ['id', $projection];
-			}
-		} elsif ($projectionSpecification =~ /(\w+)\((-?\d+)\)/) {
-			push @projections, [$1, $2];
+		if ($projectionSpecification =~ /^-?\d+$/) { # e.g.: 5, -1
+			push @projections, ['id', [$projectionSpecification, $projectionSpecification]];
+		} elsif ($projectionSpecification =~ /^(-?\d+)\.\.(-?\d+)/) { # e.g.: 1..2
+			push @projections, ['id', [$1, $2]];
+		} elsif ($projectionSpecification =~ /(\w+)\((-?\d+)\)/) { # e.g.: sum(1), avg(2)
+			push @projections, [$1, [$2, $2]];
 		}
 	}
 	return (1, @projections);
