@@ -55,6 +55,9 @@ sub parseColumnProjections {
             push @projections, ['id', [$1, $2]];
         } elsif ($projectionSpecification =~ /(\w+)\((-?\d+)\)/) { # e.g.: sum(1), avg(2)
             push @projections, [$1, [$2, $2]];
+        } else {
+            usage();
+            exit(1);
         }
     }
     return (1, @projections);
@@ -76,6 +79,9 @@ sub parseRowProjections {
             for $projection ($1 .. $2) {
                 push @projections, $projection;
             }
+        } else {
+            usage();
+            exit(1);
         }
     }
     return (1, @projections);
@@ -110,4 +116,10 @@ sub normalizeColumnId {
     my $columnId = shift;
     my $columns = shift;
     return ($columnId + ($columnId < 0 ? 0 : -1)) % $columns;
+}
+
+sub usage {
+    print "usage: ss [-c <column_projections>] [-r <row_projections>] [-s] [file]\n\n";
+    print "\tcolumn_projections ::= column_projection [, column_projections]\n";
+    print "\tcolumn_projection  ::= number..number|number\n";
 }
