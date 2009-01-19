@@ -2,7 +2,7 @@
 
 I do a lot of "forensics" at Twitter. That is, I analyze data to debug latency and throughput bottlenecks in the system. One of the most basic operations I perform is to watch the average, median, and standard deviation of various data.
 
-SS is a tool to assist interactively watching (columnar) data in real-time.
+SS is a tool to assist interactively watching (columnar) data in real-time. SS is a real-time interactive tool
 
 Suppose you have input of the format:
 
@@ -35,6 +35,8 @@ Which will output only those rows 1 and 2.
 You can compute aggregation functions, such as:
 
     % ss -c'stddev(1)' < input
+    
+The thing to bear in mind is you watch these aggregations change in real time. This is a real-time interactive tool.
     
 Aggregation functions include avg, max, min, sum, count, stddev, and q (don't ask). Median is not yet supported, I'm still searching the internets for a dynamic linear-time algorithm. If I can't find one I'll do the O(n log n) one.
 
