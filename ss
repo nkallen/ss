@@ -18,12 +18,6 @@ while (<STDIN>) {
     my @columns = split(/\s+/);
     my @output = ();
 
-    if ($hasRowProjections) {
-        last if (!@rowProjections);
-        next if ($rowProjections[0] != $row);
-        shift @rowProjections;
-    }
-
     if ($hasColumnProjections) {
         my $projection;
         for $projection (@columnProjections) {
@@ -31,12 +25,19 @@ while (<STDIN>) {
             my $columnId;
             for $columnId (normalizeColumnId(@$columnIds[0], scalar @columns) .. normalizeColumnId(@$columnIds[1], scalar @columns)) {
                 my $datum = $columns[$columnId];
-                push(@output, calc($calculation, $columnId, $datum));
+                push(@output, calc($calculation, $columnId, $datum, $row));
             }
         }
     } else {
         @output = @columns;
     }
+
+    if ($hasRowProjections) {
+        last if (!@rowProjections);
+        next if ($rowProjections[0] != $row);
+        shift @rowProjections;
+    }
+
     print(join("\t", @output), "\n") if @output > 0;
 }
 
@@ -56,8 +57,7 @@ sub parseColumnProjections {
         } elsif ($projectionSpecification =~ /(\w+)\((-?\d+)\)/) { # e.g.: sum(1), avg(2)
             push @projections, [$1, [$2, $2]];
         } else {
-            usage();
-            exit(1);
+            usage(); exit(1);
         }
     }
     return (1, @projections);
@@ -80,8 +80,7 @@ sub parseRowProjections {
                 push @projections, $projection;
             }
         } else {
-            usage();
-            exit(1);
+            usage(); exit(1);
         }
     }
     return (1, @projections);
@@ -91,24 +90,36 @@ sub calc {
     my $calculation = shift;
     my $column = shift;
     my $datum = shift;
+    my $i = shift;
     if ($calculation =~ /^id$/) {
         return $datum;
     } elsif ($calculation =~ /^sum$/) {
-        $calculations{$column}{sum} ||= 0;
-        return $calculations{$column}{sum} += $datum;
+        my $oldSum = $calculations{$column}{sum}[$i-1] ||= 0;
+        return $calculations{$column}{sum}[$i] ||= $oldSum + $datum;
     } elsif ($calculation =~ /^count$/) {
-        $calculations{$column}{count} ||= 0;
-        return ++$calculations{$column}{count};
+        my $oldCount = $calculations{$column}{count}[$i-1] ||= 0;
+        return $calculations{$column}{count}[$i] ||= $oldCount + 1;
     } elsif ($calculation =~ /^avg$/) {
-        calc('sum', $column, $datum);
-        calc('count', $column, $datum);
-        return $calculations{$column}{sum} / $calculations{$column}{count};
+        my $oldAverage = $calculations{$column}{avg}[$i-1] ||= $datum;
+        return $calculations{$column}{avg}[$i] ||= $oldAverage + ($datum - $oldAverage) / calc('count', $column, $datum, $i);
     } elsif ($calculation =~ /^max$/) {
-        $calculations{$column}{max} ||= $datum;
-        return $calculations{$column}{max} = $calculations{$column}{max} > $datum ? $calculations{$column}{max} : $datum;
+        my $oldMax = $calculations{$column}{max}[$i-1] ||= $datum;
+        return $calculations{$column}{max}[$i] ||= $oldMax > $datum ? $oldMax : $datum;
     } elsif ($calculation =~ /^min$/) {
-        $calculations{$column}{min} ||= $datum;
-        return $calculations{$column}{min} = $calculations{$column}{min} < $datum ? $calculations{$column}{min} : $datum;
+        my $oldMin = $calculations{$column}{min}[$i-1] ||= $datum;
+        return $calculations{$column}{min}[$i] ||= $oldMin < $datum ? $oldMin : $datum;
+    } elsif ($calculation =~ /^stddev$/) {
+        calc('count', $column, $datum, $i);
+        calc('q', $column, $datum, $i);
+        return $i == 1 ? 0 : ((calc('q', $column, $datum, $i) / (calc('count', $column, $datum, $i) - 1)) ** 0.5);
+    } elsif ($calculation =~ /^q$/) {
+        calc('avg', $column, $datum, $i);
+        my $oldQ = $calculations{$column}{q}[$i-1] ||= 0;
+        my $oldAvg = calc('avg', $column, $datum, $i-1);
+        my $count = calc('count', $column, $datum, $i);
+        return $calculations{$column}{q}[$i] ||= $oldQ + ($count - 1) * (($datum - $oldAvg) ** 2) / $count;
+    } else {
+        usage(); exit(1);
     }
 }
 
@@ -122,4 +133,5 @@ sub usage {
     print "usage: ss [-c <column_projections>] [-r <row_projections>] [-s] [file]\n\n";
     print "\tcolumn_projections ::= column_projection [, column_projections]\n";
     print "\tcolumn_projection  ::= number..number|number\n";
+    print "\tfunctions          ::= avg|med|stddev|sum|count|max|min\n";
 }
