@@ -1,0 +1,51 @@
+# Introducing SS
+
+I do a lot of "forensics" at Twitter. That is, I analyze data to debug latency and throughput bottlenecks in the system. One of the most basic operations I perform is to watch the average, median, and standard deviation of various data.
+
+SS is a tool to assist interactively watching (columnar) data in real-time.
+
+Suppose you have input of the format:
+
+1   2   3
+4   5   6
+7   8   9
+
+To select specific columns, you can:
+
+    % ss -c1,2,3 < input
+
+Which is equivalent to `awk '{print $1, $2, $3} < input`.
+
+Ranges are supported like:
+
+    % ss -c1..3 < input
+    
+As well as negative indices:
+
+    % ss -c-1 < input
+    
+Which in this case is equivalent to `ss -c3 < input`
+
+You can select particular rows:
+
+    % ss -r1,2 < input
+
+Which will output only those rows 1 and 2.
+
+You can compute aggregation functions, such as:
+
+    % ss -c'stddev(1)' < input
+    
+Features not yet supported but soon to be added include:
+
+* Summarize all the data:
+
+output all aggregation data (mean, median, stddev, etc.) after reaching EOF
+
+* Selection:
+
+add "where clauses"
+
+    % ss -w'$1 == 5' < input
+    
+Which will filter out all rows where the first column is not equal to `5`.
