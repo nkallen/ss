@@ -36,6 +36,8 @@ You can compute aggregation functions, such as:
 
     % ss -c'stddev(1)' < input
     
+Aggregation functions include avg, max, min, sum, count, stddev, and q (don't ask). Median is not yet supported, I'm still searching the internets for a dynamic linear-time algorithm. If I can't find one I'll do the O(n log n) one.
+
 Features not yet supported but soon to be added include:
 
 * Summarize all the data:
@@ -49,3 +51,9 @@ add "where clauses"
     % ss -w'$1 == 5' < input
     
 Which will filter out all rows where the first column is not equal to `5`.
+
+* Arbitrary projections:
+
+    % ss -c'$1 + $2'
+
+This would output the sum of columns 1 and 2.
