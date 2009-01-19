@@ -100,8 +100,10 @@ sub calc {
         my $oldCount = $calculations{$column}{count}[$i-1] ||= 0;
         return $calculations{$column}{count}[$i] ||= $oldCount + 1;
     } elsif ($calculation =~ /^avg$/) {
+        my $count = calc('count', $column, $datum, $i);
+        
         my $oldAverage = $calculations{$column}{avg}[$i-1] ||= $datum;
-        return $calculations{$column}{avg}[$i] ||= $oldAverage + ($datum - $oldAverage) / calc('count', $column, $datum, $i);
+        return $calculations{$column}{avg}[$i] ||= $oldAverage + ($datum - $oldAverage) / $count;
     } elsif ($calculation =~ /^max$/) {
         my $oldMax = $calculations{$column}{max}[$i-1] ||= $datum;
         return $calculations{$column}{max}[$i] ||= $oldMax > $datum ? $oldMax : $datum;
@@ -109,14 +111,16 @@ sub calc {
         my $oldMin = $calculations{$column}{min}[$i-1] ||= $datum;
         return $calculations{$column}{min}[$i] ||= $oldMin < $datum ? $oldMin : $datum;
     } elsif ($calculation =~ /^stddev$/) {
-        calc('count', $column, $datum, $i);
-        calc('q', $column, $datum, $i);
-        return $i == 1 ? 0 : ((calc('q', $column, $datum, $i) / (calc('count', $column, $datum, $i) - 1)) ** 0.5);
+        my $q = calc('q', $column, $datum, $i);
+        my $count = calc('count', $column, $datum, $i);
+        
+        return $i == 1 ? 0 : (($q / $count) ** 0.5);
     } elsif ($calculation =~ /^q$/) {
         calc('avg', $column, $datum, $i);
+        my $count = calc('count', $column, $datum, $i);
+        
         my $oldQ = $calculations{$column}{q}[$i-1] ||= 0;
         my $oldAvg = calc('avg', $column, $datum, $i-1);
-        my $count = calc('count', $column, $datum, $i);
         return $calculations{$column}{q}[$i] ||= $oldQ + ($count - 1) * (($datum - $oldAvg) ** 2) / $count;
     } else {
         usage(); exit(1);
