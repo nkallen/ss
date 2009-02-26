@@ -24,7 +24,7 @@ while (<STDIN>) {
     for $projection (@columnProjections) {
       my ($calculation, $columnIds) = @$projection;
       my $columnId;
-      for $columnId (normalizeColumnId(@$columnIds[0], scalar @columns) .. normalizeColumnId(@$columnIds[1], scalar @columns)) { # FIXME - this loop should really be in parseColumnProjections
+      for $columnId (normalizeColumnId(@$columnIds[0], scalar @columns) .. normalizeColumnId(@$columnIds[1], scalar @columns)) {
         my $datum = $columns[$columnId];
         my $group;
         if ($groupings{$row}) {
