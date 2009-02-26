@@ -2,7 +2,7 @@
 
 echo $0
 
-cd ../../../
+cd `dirname $0`/../../../
 
 diff <(./ss -c1,1,1 < test/input) <(echo "\
 1	1	1

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo $0
+
+cd `dirname $0`/../../../
+
+diff <(./ss -g1 -c'1,avg(2)' < test/groupable) <(echo "\
+1	1
+2	2
+2	1.5")

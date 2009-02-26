@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd ../../../
+cd `dirname $0`/../../../
 
 diff <(./ss -c1,2 < test/input) <(echo "\
 1	2
