@@ -19,6 +19,16 @@ while (<STDIN>) {
   my @columns = split(/\s+/);
   my @output = ();
 
+  my @group = ();
+  my $datum;
+  my $columnId = 0;
+  for $datum (@columns) {
+    if ($groupings{$columnId}) {
+      push(@group, $datum);
+    }    
+    $columnId++;
+  }
+
   if ($hasColumnProjections) {
     my $projection;
     for $projection (@columnProjections) {
@@ -26,13 +36,7 @@ while (<STDIN>) {
       my $columnId;
       for $columnId (normalizeColumnId(@$columnIds[0], scalar @columns) .. normalizeColumnId(@$columnIds[1], scalar @columns)) {
         my $datum = $columns[$columnId];
-        my $group;
-        if ($groupings{$row}) {
-          $group = $datum;
-        } else {
-          $group = -1;
-        }
-        push(@output, calc($calculation, $columnId, $group, $datum, $row));
+        push(@output, calc($calculation, $columnId, join(",", @group), $datum));
       }
     }
   } else {
@@ -103,7 +107,7 @@ sub parseGroupings {
 
   foreach $groupingSpecification (@groupingSpecifications) {
     if ($groupingSpecification =~ /^\d+$/) {
-      $groupings{$groupingSpecification} = 1;
+      $groupings{$groupingSpecification-1} = 1;
     } else {
       usage(); exit(1);
     }
@@ -116,7 +120,9 @@ sub calc {
   my $column = shift;
   my $group = shift;
   my $datum = shift;
-  my $i = shift;
+  
+  $calculations{$column}{$group}{$calculation} ||= [];
+  my $i = shift || scalar(@{$calculations{$column}{$group}{$calculation}}) || 1;
 
   if ($calculation =~ /^id$/) {
     return $datum;
@@ -128,7 +134,7 @@ sub calc {
     return $calculations{$column}{$group}{count}[$i] ||= $oldCount + 1;
   } elsif ($calculation =~ /^avg$/) {
     my $count = calc('count', $column, $group, $datum, $i);
-    
+
     my $oldAverage = $calculations{$column}{$group}{avg}[$i-1] ||= $datum;
     return $calculations{$column}{$group}{avg}[$i] ||= $oldAverage + ($datum - $oldAverage) / $count;
   } elsif ($calculation =~ /^max$/) {
@@ -140,8 +146,9 @@ sub calc {
   } elsif ($calculation =~ /^stddev$/) {
     my $q = calc('q', $column, $group, $datum, $i);
     my $count = calc('count', $column, $group, $datum, $i);
-    
-    return $i == 1 ? 0 : (($q / $count) ** 0.5);
+print "q:", $q, "\n";
+    $calculations{$column}{$group}{stddev}[$i-1] ||= 0;
+    return $calculations{$column}{$group}{stddev}[$i] ||= ($q / $count) ** 0.5;
   } elsif ($calculation =~ /^q$/) {
     calc('avg', $column, $group, $datum, $i);
     my $count = calc('count', $column, $group, $datum, $i);
