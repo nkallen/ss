@@ -122,7 +122,10 @@ sub calc {
   my $datum = shift;
   
   $calculations{$column}{$group}{$calculation} ||= [];
-  my $i = shift || scalar(@{$calculations{$column}{$group}{$calculation}}) || 1;
+  my $i = shift;
+  if (!defined($i)) {
+    $i = scalar(@{$calculations{$column}{$group}{$calculation}}) || 1;
+  }
 
   if ($calculation =~ /^id$/) {
     return $datum;
@@ -134,8 +137,8 @@ sub calc {
     return $calculations{$column}{$group}{count}[$i] ||= $oldCount + 1;
   } elsif ($calculation =~ /^avg$/) {
     my $count = calc('count', $column, $group, $datum, $i);
-
     my $oldAverage = $calculations{$column}{$group}{avg}[$i-1] ||= $datum;
+
     return $calculations{$column}{$group}{avg}[$i] ||= $oldAverage + ($datum - $oldAverage) / $count;
   } elsif ($calculation =~ /^max$/) {
     my $oldMax = $calculations{$column}{$group}{max}[$i-1] ||= $datum;
@@ -146,15 +149,15 @@ sub calc {
   } elsif ($calculation =~ /^stddev$/) {
     my $q = calc('q', $column, $group, $datum, $i);
     my $count = calc('count', $column, $group, $datum, $i);
-print "q:", $q, "\n";
+
     $calculations{$column}{$group}{stddev}[$i-1] ||= 0;
     return $calculations{$column}{$group}{stddev}[$i] ||= ($q / $count) ** 0.5;
   } elsif ($calculation =~ /^q$/) {
     calc('avg', $column, $group, $datum, $i);
     my $count = calc('count', $column, $group, $datum, $i);
-    
     my $oldQ = $calculations{$column}{$group}{q}[$i-1] ||= 0;
     my $oldAvg = calc('avg', $column, $group, $datum, $i-1);
+
     return $calculations{$column}{$group}{q}[$i] ||= $oldQ + ($count - 1) * (($datum - $oldAvg) ** 2) / $count;
   } else {
     usage(); exit(1);
